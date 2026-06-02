@@ -1,16 +1,26 @@
-import { AccountList } from "./components/AccountList";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Dashboard } from "./components/Dashboard";
+import { LoginPage } from "./components/LoginPage";
+import { Spinner } from "./components/ui/Spinner";
 
-function App() {
-  return (
-    <div className="app">
-      <header className="header">
-        <h1>Banking Dashboard</h1>
-      </header>
-      <main className="flex pt-100 container mx-auto">
-        <AccountList />
-      </main>
-    </div>
-  );
+function Root() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-full items-center justify-center">
+        <Spinner className="h-8 w-8 text-accent-600" />
+      </div>
+    );
+  }
+
+  return user ? <Dashboard /> : <LoginPage />;
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
+  );
+}
