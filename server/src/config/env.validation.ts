@@ -1,4 +1,4 @@
-import { plainToInstance } from "class-transformer";
+import { plainToInstance, Type } from "class-transformer";
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min, MinLength, validateSync } from "class-validator";
 
 export enum NodeEnv {
@@ -13,6 +13,7 @@ export class EnvironmentVariables {
   NODE_ENV: NodeEnv = NodeEnv.Development;
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   @Max(65535)
@@ -26,6 +27,7 @@ export class EnvironmentVariables {
   REDIS_HOST = "localhost";
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   @Max(65535)

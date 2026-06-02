@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from "@nestjs/common";
-import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AccountResponseDto } from "../accounts/dto/account-response.dto";
+import type { AuthUser } from "../auth/auth-user";
+import { CurrentUser } from "../auth/current-user.decorator";
 import { CreateTransactionDto } from "./dto/create-transaction.dto";
 import { ListTransactionsQueryDto } from "./dto/list-transactions-query.dto";
 import {
@@ -11,6 +13,7 @@ import {
 import { TransactionsService } from "./transactions.service";
 
 @ApiTags("transactions")
+@ApiBearerAuth()
 @Controller("accounts/:accountId/transactions")
 export class TransactionsController {
   constructor(private readonly transactions: TransactionsService) {}
@@ -20,9 +23,10 @@ export class TransactionsController {
   @ApiCreatedResponse({ type: TransactionResultDto })
   async create(
     @Param("accountId", ParseIntPipe) accountId: number,
+    @CurrentUser() user: AuthUser,
     @Body() dto: CreateTransactionDto
   ): Promise<TransactionResultDto> {
-    const result = await this.transactions.createTransaction(accountId, dto);
+    const result = await this.transactions.createTransaction(accountId, user.id, dto);
     return {
       transaction: TransactionResponseDto.from(result.transaction),
       account: AccountResponseDto.from(result.account),
@@ -35,9 +39,10 @@ export class TransactionsController {
   @ApiOkResponse({ type: PaginatedTransactionsDto })
   async list(
     @Param("accountId", ParseIntPipe) accountId: number,
+    @CurrentUser() user: AuthUser,
     @Query() query: ListTransactionsQueryDto
   ): Promise<PaginatedTransactionsDto> {
-    const result = await this.transactions.listTransactions(accountId, query);
+    const result = await this.transactions.listTransactions(accountId, user.id, query);
     return {
       data: result.data.map((tx) => TransactionResponseDto.from(tx)),
       pagination: result.pagination,

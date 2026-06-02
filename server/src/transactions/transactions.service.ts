@@ -39,18 +39,23 @@ export class TransactionsService {
 
   /**
    * Apply a transaction atomically and return the updated account state.
-   * DEPOSIT credits, WITHDRAWAL debits (guarding overdraft), and TRANSFER moves
-   * funds between two accounts as a single all-or-nothing unit recorded as two
-   * linked ledger rows.
+   * The source account must belong to `userId`; for a TRANSFER the destination
+   * may be any existing account. DEPOSIT credits, WITHDRAWAL debits (guarding
+   * overdraft), and TRANSFER moves funds as a single all-or-nothing unit
+   * recorded as two linked ledger rows.
    */
-  async createTransaction(accountId: number, dto: CreateTransactionDto): Promise<TransactionResult> {
+  async createTransaction(
+    accountId: number,
+    userId: number,
+    dto: CreateTransactionDto
+  ): Promise<TransactionResult> {
     const amount = dollarsToCents(dto.amount);
     const reference = randomUUID();
 
     return this.db.transaction(async (tx) => {
       switch (dto.type) {
         case "DEPOSIT": {
-          const account = await this.lockAccount(tx, accountId);
+          const account = await this.lockOwnedAccount(tx, accountId, userId);
           const updated = await this.setBalance(tx, accountId, account.balance + amount);
           const [transaction] = await tx
             .insert(transactionsTable)
@@ -67,7 +72,7 @@ export class TransactionsService {
         }
 
         case "WITHDRAWAL": {
-          const account = await this.lockAccount(tx, accountId);
+          const account = await this.lockOwnedAccount(tx, accountId, userId);
           if (account.balance < amount) {
             throw new InsufficientFundsError("Insufficient funds for this withdrawal");
           }
@@ -102,6 +107,9 @@ export class TransactionsService {
           const source = locked.get(accountId)!;
           const destination = locked.get(toAccountId)!;
 
+          if (source.userId !== userId) {
+            throw new NotFoundError(`Account ${accountId} not found`);
+          }
           if (source.balance < amount) {
             throw new InsufficientFundsError("Insufficient funds for this transfer");
           }
@@ -142,9 +150,13 @@ export class TransactionsService {
     });
   }
 
-  async listTransactions(accountId: number, query: ListTransactionsQueryDto): Promise<PaginatedTransactions> {
-    // 404 for an unknown account rather than silently returning an empty page.
-    await this.accounts.getAccountById(accountId);
+  async listTransactions(
+    accountId: number,
+    userId: number,
+    query: ListTransactionsQueryDto
+  ): Promise<PaginatedTransactions> {
+    // Ownership + existence check (404 for missing or not-owned).
+    await this.accounts.getOwnedAccount(accountId, userId);
 
     const { page, limit, type, sortBy, order } = query;
     const offset = (page - 1) * limit;
@@ -187,6 +199,14 @@ export class TransactionsService {
   private async lockAccount(tx: Tx, id: number): Promise<Account> {
     const [account] = await tx.select().from(accountsTable).where(eq(accountsTable.id, id)).for("update");
     if (!account) {
+      throw new NotFoundError(`Account ${id} not found`);
+    }
+    return account;
+  }
+
+  private async lockOwnedAccount(tx: Tx, id: number, userId: number): Promise<Account> {
+    const account = await this.lockAccount(tx, id);
+    if (account.userId !== userId) {
       throw new NotFoundError(`Account ${id} not found`);
     }
     return account;

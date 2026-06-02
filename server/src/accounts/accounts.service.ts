@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { DRIZZLE, type DrizzleDB } from "../db/drizzle";
 import { accountsTable, type Account } from "../db/schema";
 import { NotFoundError } from "../lib/errors";
@@ -8,12 +8,24 @@ import { NotFoundError } from "../lib/errors";
 export class AccountsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async listAccounts(): Promise<Account[]> {
-    return this.db.select().from(accountsTable).orderBy(asc(accountsTable.id));
+  async listAccounts(userId: number): Promise<Account[]> {
+    return this.db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.userId, userId))
+      .orderBy(asc(accountsTable.id));
   }
 
-  async getAccountById(id: number): Promise<Account> {
-    const [account] = await this.db.select().from(accountsTable).where(eq(accountsTable.id, id));
+  /**
+   * Fetch an account the user owns. Scoping the query by userId (rather than
+   * fetching then checking) means a non-owned account is indistinguishable from
+   * a missing one — no account-id enumeration.
+   */
+  async getOwnedAccount(id: number, userId: number): Promise<Account> {
+    const [account] = await this.db
+      .select()
+      .from(accountsTable)
+      .where(and(eq(accountsTable.id, id), eq(accountsTable.userId, userId)));
     if (!account) {
       throw new NotFoundError(`Account ${id} not found`);
     }
