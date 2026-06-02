@@ -69,7 +69,7 @@ All routes are under `/api`. Everything except `register`, `login` and `health` 
 
 This started from a deliberately-basic scaffold; the notable changes:
 
-1. **Money is stored as integer cents (bigint), never floats.** The original schema stored transaction amounts as `numeric(7,4)` mislabeled `balance` — a max of **$999.9999**, unable to even record a $1,000 deposit. Dollars exist only at the API boundary.
+1. **Money is stored as integer cents (bigint), never floats.** The provided scaffold stored balances as a floating-point `REAL`, and an early iteration of my own Postgres schema briefly used `numeric(7,4)` (a max of **$999.9999** — unable to even record a $1,000 deposit) before I settled on integer cents. Floats can't represent currency exactly; integer cents are exact, and dollars exist only at the API boundary.
 2. **Atomic double-entry transfers.** A transfer locks both accounts `FOR UPDATE` (in ascending id order, so concurrent opposite transfers can't deadlock), checks funds, then writes a linked `DEBIT` + `CREDIT` sharing a `groupReference`. Withdrawals/transfers reject overdraft (422).
 3. **Layered, framework-agnostic domain.** Services throw a small domain error hierarchy; a single exception filter maps those (and validation failures) to consistent JSON, so business logic stays free of HTTP concerns.
 4. **Input validation** via class-validator DTOs (amount > 0 and ≤ 2 decimals, description required, `toAccountId` required only for transfers).
