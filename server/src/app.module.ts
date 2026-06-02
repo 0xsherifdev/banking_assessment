@@ -9,6 +9,7 @@ import { AllExceptionsFilter } from "./common/exceptions/all-exceptions.filter";
 import { validate } from "./config/env.validation";
 import { DrizzleModule } from "./db/drizzle.module";
 import { HealthModule } from "./health/health.module";
+import { RedisModule } from "./redis/redis.module";
 import { TransactionsModule } from "./transactions/transactions.module";
 import { UsersModule } from "./users/users.module";
 
@@ -16,6 +17,7 @@ import { UsersModule } from "./users/users.module";
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate, envFilePath: [".env"] }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    RedisModule,
     DrizzleModule,
     HealthModule,
     UsersModule,
