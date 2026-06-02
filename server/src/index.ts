@@ -24,8 +24,9 @@
 
 import express from "express";
 import cors from "cors";
-import sqlite3 from "sqlite3";
-import { Database } from "sqlite3";
+import { db } from "./db";
+import { accountsTable, transactionsTable } from "./db/schema";
+import { eq } from "drizzle-orm";
 
 const app = express();
 const PORT = 3001;
@@ -34,112 +35,76 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Database setup - Currently using in-memory SQLite for simplicity
-// Consider: Production database, connection pooling, error handling
-const db: Database = new sqlite3.Database(":memory:", (err) => {
-  if (err) {
-    console.error("Error opening database:", err);
-  } else {
-    console.log("Connected to in-memory SQLite database");
-    initializeDatabase();
-  }
-});
-
-// Basic database initialization
-// Consider: Migration system, seed data management, error handling
-function initializeDatabase() {
-  const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS accounts (
-      id TEXT PRIMARY KEY,
-      accountNumber TEXT UNIQUE,
-      accountType TEXT CHECK(accountType IN ('CHECKING', 'SAVINGS')),
-      balance REAL,
-      accountHolder TEXT,
-      createdAt TEXT
-    )
-  `;
-
-  db.run(createTableQuery, (err) => {
-    if (err) {
-      console.error("Error creating table:", err);
-    } else {
-      console.log("Accounts table created");
-      insertSampleData();
-    }
-  });
-}
-
-// Sample data insertion
-// Consider: Data validation, error handling, transaction management
-function insertSampleData() {
-  const sampleAccounts = [
-    {
-      id: "1",
-      accountNumber: "1001",
-      accountType: "CHECKING",
-      balance: 5000.0,
-      accountHolder: "John Doe",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      accountNumber: "1002",
-      accountType: "SAVINGS",
-      balance: 10000.0,
-      accountHolder: "Jane Smith",
-      createdAt: new Date().toISOString(),
-    },
-  ];
-
-  const insertQuery = `
-    INSERT OR REPLACE INTO accounts (id, accountNumber, accountType, balance, accountHolder, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-
-  sampleAccounts.forEach((account) => {
-    db.run(
-      insertQuery,
-      [
-        account.id,
-        account.accountNumber,
-        account.accountType,
-        account.balance,
-        account.accountHolder,
-        account.createdAt,
-      ],
-      (err) => {
-        if (err) {
-          console.error("Error inserting sample data:", err);
-        }
-      }
-    );
-  });
-}
-
 // Basic API routes
 // Consider: Input validation, authentication, rate limiting, response formatting
 app.get("/api/accounts", (req, res) => {
-  db.all("SELECT * FROM accounts", (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json(rows);
-  });
+  db.select()
+    .from(accountsTable)
+    .then((data) => res.json(data))
+    .catch((err) => res.status(500).json({ error: err.message || "An error occurred" }));
 });
 
 app.get("/api/accounts/:id", (req, res) => {
-  db.get("SELECT * FROM accounts WHERE id = ?", [req.params.id], (err, row) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+  const accountId = parseInt(req.params.id);
+
+  db.select()
+    .from(accountsTable)
+    .where(eq(accountsTable.id, accountId))
+    .then((data) => res.json(data[0]))
+    .catch((err) => res.status(500).json({ error: err.message || "An error occurred" }));
+});
+
+app.post("/api/accounts/:id/transactions", async (req, res) => {
+  const accountId = parseInt(req.params.id);
+
+  const { type, amount, description } = req.body;
+
+  // TODO: add idempotency key to payload and save it as reference on transaction table
+  if (!type || !amount || !description) {
+    res.status(403).json({ error: "request body must contain type, amount and description" });
+  }
+
+  const [account] = await db.select().from(accountsTable).where(eq(accountsTable.id, accountId));
+
+  if (!account) {
+    res.status(404).json({ error: "Account not found" });
+    return;
+  }
+
+  try {
+    switch (type) {
+      case "DEPOSIT":
+        db.transaction(async (tx) => {
+          const [transaction] = await tx
+            .insert(transactionsTable)
+            .values({
+              amount,
+              type,
+              description,
+              accountId: account.id,
+            })
+            .returning();
+
+          const updatedAccount = await tx
+            .update(accountsTable)
+            .set({
+              balance: account.balance + transaction.amount,
+            })
+            .where(eq(accountsTable.id, account.id));
+
+          res.json({ message: `Account has been credited with ${amount},New balance: ${updatedAccount}` });
+        });
+        break;
+      case "WITHDRAWAL":
+        res.status(500).json({ res: "Not implemented" });
+        break;
+      case "TRANSFER":
+        res.status(500).json({ res: "Not implemented" });
+        break;
     }
-    if (!row) {
-      res.status(404).json({ error: "Account not found" });
-      return;
-    }
-    res.json(row);
-  });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "An error occured" });
+  }
 });
 
 // Server startup
