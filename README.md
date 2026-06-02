@@ -48,6 +48,26 @@ Or run both from the repo root: `npm run install-all && npm run dev` (after infr
 | john@example.com  | `Password123!` | 1001 (Checking)    | $5,000   |
 | jane@example.com  | `Password123!` | 1002 (Savings)     | $10,000  |
 
+## Docker deployment (API)
+
+`server/Dockerfile` builds a slim production image whose `entrypoint.sh` **runs database migrations on startup** (via the Drizzle migrator — no manual `db:migrate`). Set `SEED_ON_START=true` to also load the demo data; seeding is **idempotent** — it only runs when the database is empty, so restarts/redeploys never wipe data.
+
+```bash
+docker build -t banking-api ./server
+
+# Point it at your Postgres + Redis. Example: the compose services on their
+# shared network (start them first: `docker compose up -d postgres redis`).
+docker run --rm -p 3001:3001 \
+  --network banking_assessment_postgres \
+  -e DATABASE_URL="postgres://admin:admin@postgres:5432/bankdb" \
+  -e JWT_SECRET="a-random-secret-at-least-16-chars" \
+  -e REDIS_HOST=redis -e REDIS_PORT=6379 \
+  -e SEED_ON_START=true \
+  banking-api
+```
+
+`DATABASE_URL` and `JWT_SECRET` are required (the entrypoint fails fast if either is missing); `REDIS_HOST`/`REDIS_PORT` default to `localhost:6379`. The migrator retries while the database comes up, so starting alongside a not-yet-ready Postgres is fine. To reach a Postgres on the host instead, drop `--network` and use `host.docker.internal` in `DATABASE_URL` (on Linux add `--add-host=host.docker.internal:host-gateway`).
+
 ## API
 
 All routes are under `/api`. Everything except `register`, `login` and `health` requires a `Bearer` JWT. Full interactive docs at **`/docs`** (Swagger).
