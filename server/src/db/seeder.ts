@@ -10,7 +10,7 @@ import { accountsTable, transactionsTable, usersTable, type NewTransaction } fro
  * Balances are the accounts' authoritative current balances; the listed items
  * are recent history records and are not used to recompute the balance.
  */
-async function seed() {
+export async function seed() {
   // Re-runnable: wipe all tables and reset identity sequences.
   await db.execute(
     sql`TRUNCATE TABLE ${transactionsTable}, ${accountsTable}, ${usersTable} RESTART IDENTITY CASCADE`
@@ -112,10 +112,14 @@ async function seed() {
   console.log("Login: john@example.com / jane@example.com — password: Password123!");
 }
 
-seed()
-  .then(() => pool.end())
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error("Seed failed:", err);
-    process.exit(1);
-  });
+// Run directly (`npm run db:seed`): wipe + reseed, then exit. When imported
+// (e.g. by seed-if-empty), only the `seed` export is used — this block is skipped.
+if (require.main === module) {
+  seed()
+    .then(() => pool.end())
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("Seed failed:", err);
+      process.exit(1);
+    });
+}
