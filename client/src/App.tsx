@@ -9,7 +9,7 @@ function Root() {
   if (loading) {
     return (
       <div className="flex min-h-full items-center justify-center">
-        <Spinner className="h-8 w-8 text-indigo-600" />
+        <Spinner className="h-8 w-8 text-accent-600" />
       </div>
     );
   }

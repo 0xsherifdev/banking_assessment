@@ -41,7 +41,7 @@ export function TransactionsView({
   if (!account) {
     return (
       <div className="flex justify-center py-16">
-        <Spinner className="h-8 w-8 text-indigo-600" />
+        <Spinner className="h-8 w-8 text-accent-600" />
       </div>
     );
   }
@@ -75,30 +75,31 @@ export function TransactionsView({
     <section>
       <button
         onClick={onBack}
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-4 inline-flex items-center gap-1 rounded-control text-sm text-ink-500 transition-colors hover:text-ink-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600"
       >
         ← Back to accounts
       </button>
 
-      <div className="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="mb-8 rounded-card bg-surface p-6 shadow-card outline outline-1 outline-ink-200">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm text-slate-500">
-              {account.accountHolder} · {account.accountType} · •••• {account.accountNumber}
+            <p className="text-sm text-ink-500">
+              {account.accountHolder} · {account.accountType} ·{" "}
+              <span className="money">•••• {account.accountNumber.slice(-4)}</span>
             </p>
-            <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">
+            <p className="money mt-1 text-3xl font-semibold tracking-tight text-ink-900">
               {formatCurrency(account.balance)}
             </p>
           </div>
-          <Button onClick={() => setShowForm(true)}>+ New Transaction</Button>
+          <Button onClick={() => setShowForm(true)}>New transaction</Button>
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
-          <h3 className="text-sm font-semibold text-slate-900">Transactions</h3>
+      <div className="rounded-card bg-surface shadow-card outline outline-1 outline-ink-200">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-200 px-4 py-3">
+          <h3 className="text-sm font-semibold text-ink-900">Transactions</h3>
           <div className="flex items-center gap-2">
-            <label htmlFor="typeFilter" className="text-sm text-slate-500">
+            <label htmlFor="typeFilter" className="text-xs font-medium uppercase tracking-[0.04em] text-ink-500">
               Filter
             </label>
             <Select
@@ -123,13 +124,25 @@ export function TransactionsView({
         ) : loading ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+              <div key={i} className="h-11 animate-pulse rounded-control bg-ink-100" />
             ))}
           </div>
         ) : !data || data.data.length === 0 ? (
-          <p className="p-10 text-center text-sm text-slate-500">
-            {typeFilter === "ALL" ? "No transactions yet." : `No ${typeFilter.toLowerCase()} transactions.`}
-          </p>
+          <div className="px-6 py-14 text-center">
+            <p className="text-sm font-medium text-ink-900">
+              {typeFilter === "ALL" ? "No transactions yet" : `No ${typeFilter.toLowerCase()} transactions`}
+            </p>
+            <p className="mx-auto mt-1 max-w-xs text-sm text-ink-500">
+              {typeFilter === "ALL"
+                ? "When you move money in or out of this account, it'll show up here."
+                : "Try a different filter to see more activity."}
+            </p>
+            {typeFilter === "ALL" && (
+              <Button className="mt-5" onClick={() => setShowForm(true)}>
+                New transaction
+              </Button>
+            )}
+          </div>
         ) : (
           <>
             <TransactionsTable transactions={data.data} sortBy={sortBy} order={order} onSort={handleSort} />

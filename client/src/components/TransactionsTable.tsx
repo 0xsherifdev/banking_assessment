@@ -1,17 +1,19 @@
 import type { SortField, SortOrder, Transaction, TransactionStatus, TransactionType } from "../types";
-import { cn, formatCurrency, formatDate } from "../lib/utils";
+import { cn, formatDate, formatSignedCurrency } from "../lib/utils";
 import { Badge } from "./ui/Badge";
 
+// Neutral type badges — the signed, coloured amount already carries direction.
 const typeBadge: Record<TransactionType, string> = {
-  DEPOSIT: "bg-emerald-50 text-emerald-700",
-  WITHDRAWAL: "bg-rose-50 text-rose-700",
-  TRANSFER: "bg-indigo-50 text-indigo-700",
+  DEPOSIT: "bg-positive-soft text-positive",
+  WITHDRAWAL: "bg-ink-100 text-ink-600",
+  TRANSFER: "bg-ink-100 text-ink-600",
 };
 
+// Status colour carries meaning: red is reserved strictly for FAILED.
 const statusBadge: Record<TransactionStatus, string> = {
-  PENDING: "bg-amber-50 text-amber-700",
-  COMPLETED: "bg-emerald-50 text-emerald-700",
-  FAILED: "bg-rose-50 text-rose-700",
+  PENDING: "bg-warning-soft text-warning",
+  COMPLETED: "bg-positive-soft text-positive",
+  FAILED: "bg-negative-soft text-negative",
 };
 
 function SortHeader({
@@ -35,10 +37,13 @@ function SortHeader({
       <button
         type="button"
         onClick={() => onSort(field)}
-        className={cn("inline-flex items-center gap-1 hover:text-slate-900", align === "right" && "flex-row-reverse")}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-control transition-colors hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600",
+          align === "right" && "flex-row-reverse"
+        )}
       >
         {label}
-        <span className={cn("text-xs", active ? "text-slate-900" : "text-slate-300")}>
+        <span className={cn("text-xs", active ? "text-ink-900" : "text-ink-300")}>
           {active ? (order === "asc" ? "↑" : "↓") : "↕"}
         </span>
       </button>
@@ -60,7 +65,7 @@ export function TransactionsTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="border-b border-slate-200 text-left text-slate-500">
+        <thead className="sticky top-0 border-b border-ink-200 bg-surface text-left text-ink-500">
           <tr>
             <SortHeader label="Date" field="createdAt" sortBy={sortBy} order={order} onSort={onSort} />
             <th className="px-4 py-3 font-medium">Type</th>
@@ -68,25 +73,24 @@ export function TransactionsTable({
             <SortHeader label="Amount" field="amount" sortBy={sortBy} order={order} onSort={onSort} align="right" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-ink-100">
           {transactions.map((tx) => (
-            <tr key={tx.id} className="hover:bg-slate-50">
-              <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(tx.createdAt)}</td>
-              <td className="px-4 py-3">
+            <tr key={tx.id} className="transition-colors hover:bg-ink-50">
+              <td className="whitespace-nowrap px-4 py-3.5 text-ink-600">{formatDate(tx.createdAt)}</td>
+              <td className="px-4 py-3.5">
                 <Badge className={typeBadge[tx.type]}>{tx.type}</Badge>
                 {tx.status !== "COMPLETED" && (
-                  <Badge className={cn("ml-1", statusBadge[tx.status])}>{tx.status}</Badge>
+                  <Badge className={cn("ml-1.5", statusBadge[tx.status])}>{tx.status}</Badge>
                 )}
               </td>
-              <td className="px-4 py-3 text-slate-700">{tx.description}</td>
+              <td className="max-w-xs truncate px-4 py-3.5 text-ink-700">{tx.description}</td>
               <td
                 className={cn(
-                  "whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums",
-                  tx.direction === "CREDIT" ? "text-emerald-600" : "text-rose-600"
+                  "money whitespace-nowrap px-4 py-3.5 text-right font-medium",
+                  tx.direction === "CREDIT" ? "text-positive" : "text-ink-900"
                 )}
               >
-                {tx.direction === "CREDIT" ? "+" : "-"}
-                {formatCurrency(tx.amount)}
+                {formatSignedCurrency(tx.amount, tx.direction)}
               </td>
             </tr>
           ))}

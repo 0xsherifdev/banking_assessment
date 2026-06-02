@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { Button } from "./ui/Button";
 import { Field } from "./ui/Field";
 import { Input } from "./ui/Input";
+import { Logo } from "./Logo";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -28,14 +29,12 @@ export function LoginPage() {
     <div className="flex min-h-full items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
-            B
-          </div>
-          <h1 className="text-2xl font-semibold text-slate-900">Banking Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">Sign in to your account</p>
+          <Logo className="mx-auto mb-4 h-12 w-12" />
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">Banking Dashboard</h1>
+          <p className="mt-1 text-sm text-ink-500">Sign in to continue</p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <form onSubmit={onSubmit} className="space-y-4 rounded-card bg-surface p-6 shadow-card outline outline-1 outline-ink-200">
           <Field label="Email" htmlFor="email">
             <Input
               id="email"
@@ -58,7 +57,7 @@ export function LoginPage() {
           </Field>
 
           {error && (
-            <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+            <div className="rounded-control bg-negative-soft px-3 py-2 text-sm text-negative" role="alert">
               {error}
             </div>
           )}
@@ -68,8 +67,9 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-slate-500">
-          Demo accounts: john@example.com · jane@example.com — password <span className="font-medium">Password123!</span>
+        <p className="mt-4 text-center text-xs text-ink-500">
+          Demo accounts: john@example.com · jane@example.com — password{" "}
+          <span className="font-medium text-ink-700">Password123!</span>
         </p>
       </div>
     </div>

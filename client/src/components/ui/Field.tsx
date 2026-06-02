@@ -13,11 +13,14 @@ export function Field({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1 block text-sm font-medium text-slate-700">
+      <label
+        htmlFor={htmlFor}
+        className="mb-1.5 block text-xs font-medium uppercase tracking-[0.04em] text-ink-500"
+      >
         {label}
       </label>
       {children}
-      {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-negative">{error}</p>}
     </div>
   );
 }

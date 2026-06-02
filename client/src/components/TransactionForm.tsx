@@ -88,20 +88,24 @@ export function TransactionForm({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/45 p-4 backdrop-blur-[2px] motion-safe:animate-[fadeIn_150ms_ease-out]"
       onClick={onClose}
       role="presentation"
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+        className="w-full max-w-md rounded-modal bg-surface p-6 shadow-overlay motion-safe:animate-[dialogIn_180ms_var(--ease-out-quint)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="New transaction"
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900">New Transaction</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600" aria-label="Close">
+        <div className="mb-5 flex items-center justify-between">
+          <h3 className="text-lg font-semibold tracking-tight text-ink-900">New transaction</h3>
+          <button
+            onClick={onClose}
+            className="rounded-control p-1 text-ink-400 transition-colors hover:text-ink-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600"
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
@@ -155,14 +159,14 @@ export function TransactionForm({
               id="description"
               type="text"
               maxLength={255}
-              placeholder="What's this for?"
+              placeholder="e.g. Rent, Invoice #1024"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </Field>
 
           {formError && (
-            <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+            <div className="rounded-control bg-negative-soft px-3 py-2 text-sm text-negative" role="alert">
               {formError}
             </div>
           )}

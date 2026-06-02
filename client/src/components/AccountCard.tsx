@@ -10,21 +10,19 @@ export function AccountCard({
   onViewTransactions: () => void;
 }) {
   return (
-    <div className="flex flex-col justify-between rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div className="flex flex-col justify-between rounded-card bg-surface p-6 shadow-card outline outline-1 outline-ink-200 transition-[outline-color] hover:outline-ink-300">
       <div>
         <div className="flex items-center justify-between">
-          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-            {account.accountType}
-          </span>
-          <span className="font-mono text-sm text-slate-400">•••• {account.accountNumber}</span>
+          <span className="text-xs font-medium uppercase tracking-[0.05em] text-ink-500">{account.accountType}</span>
+          <span className="money text-sm text-ink-400">•••• {account.accountNumber.slice(-4)}</span>
         </div>
-        <p className="mt-4 text-sm text-slate-500">{account.accountHolder}</p>
-        <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">
+        <p className="mt-5 text-sm text-ink-500">{account.accountHolder}</p>
+        <p className="money mt-1 text-3xl font-semibold tracking-tight text-ink-900">
           {formatCurrency(account.balance)}
         </p>
       </div>
-      <Button variant="secondary" className="mt-5 w-full" onClick={onViewTransactions}>
-        View Transactions
+      <Button variant="secondary" className="mt-6 w-full" onClick={onViewTransactions}>
+        View transactions
       </Button>
     </div>
   );
