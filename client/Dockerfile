@@ -8,21 +8,16 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-# API calls target a same-origin /api; nginx (below) proxies it to the backend.
-# Vite inlines VITE_* from the environment at build time.
-ENV VITE_API_URL=/api
+# The API base URL is inlined at BUILD time (Vite bakes VITE_* into the bundle).
+# This static image has no API proxy — the browser calls the API directly — so
+# set the full public API URL (and add that origin to the API's CORS_ORIGIN), e.g.
+#   --build-arg VITE_API_URL=https://api.example.com/api   (Coolify: a build variable)
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
-# ---- runtime: nginx serving the static build + an /api reverse proxy ----
+# ---- runtime: nginx serving the static SPA (no API proxy) ----
 FROM nginx:1.27-alpine AS runtime
-
-# Backend that the /api/ location proxies to. Override at runtime, e.g.
-# -e API_UPSTREAM=http://host.docker.internal:3001
-ENV API_UPSTREAM=http://api:3001
-
 COPY --from=builder /app/dist /usr/share/nginx/html
-# The nginx image runs envsubst over /etc/nginx/templates/*.template on start,
-# substituting ${API_UPSTREAM} before launching nginx.
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
-
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

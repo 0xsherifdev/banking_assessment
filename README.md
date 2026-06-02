@@ -48,25 +48,38 @@ Or run both from the repo root: `npm run install-all && npm run dev` (after infr
 | john@example.com  | `Password123!` | 1001 (Checking)    | $5,000   |
 | jane@example.com  | `Password123!` | 1002 (Savings)     | $10,000  |
 
-## Docker deployment (API)
+## Docker deployment
 
-`server/Dockerfile` builds a slim production image whose `entrypoint.sh` **runs database migrations on startup** (via the Drizzle migrator — no manual `db:migrate`). Set `SEED_ON_START=true` to also load the demo data; seeding is **idempotent** — it only runs when the database is empty, so restarts/redeploys never wipe data.
+Two images: `server/Dockerfile` (NestJS API) and `client/Dockerfile` (static SPA on nginx). The browser calls the API **directly**, so the client bakes in the API URL at build time and the API allows the client's origin via CORS.
+
+### API
+
+`entrypoint.sh` **runs migrations on startup** (Drizzle migrator — no manual `db:migrate`). Set `SEED_ON_START=true` to also load the demo data; seeding is **idempotent** (only an empty DB), so restarts never wipe data.
 
 ```bash
 docker build -t banking-api ./server
-
-# Point it at your Postgres + Redis. Example: the compose services on their
-# shared network (start them first: `docker compose up -d postgres redis`).
-docker run --rm -p 3001:3001 \
-  --network banking_assessment_postgres \
-  -e DATABASE_URL="postgres://admin:admin@postgres:5432/bankdb" \
+docker run -p 3001:3001 \
+  -e DATABASE_URL="postgres://user:pass@host:5432/bankdb" \
   -e JWT_SECRET="a-random-secret-at-least-16-chars" \
-  -e REDIS_HOST=redis -e REDIS_PORT=6379 \
+  -e REDIS_URL="redis://default:pass@host:6379/0" \
+  -e CORS_ORIGIN="https://your-client-domain" \
   -e SEED_ON_START=true \
   banking-api
 ```
 
-`DATABASE_URL` and `JWT_SECRET` are required (the entrypoint fails fast if either is missing); `REDIS_HOST`/`REDIS_PORT` default to `localhost:6379`. The migrator retries while the database comes up, so starting alongside a not-yet-ready Postgres is fine. To reach a Postgres on the host instead, drop `--network` and use `host.docker.internal` in `DATABASE_URL` (on Linux add `--add-host=host.docker.internal:host-gateway`).
+Required: `DATABASE_URL`, `JWT_SECRET` (entrypoint fails fast without them). Optional: `REDIS_URL` (managed Redis; otherwise `REDIS_HOST`/`REDIS_PORT`, default `localhost:6379`), `CORS_ORIGIN` (comma-separated origin allowlist — unset reflects any origin, so **set it in production**), `SEED_ON_START`. The migrator retries while the DB comes up.
+
+### Client
+
+The API base URL is inlined at build time, so pass it as a build arg (Coolify: a build variable). nginx serves the static build with SPA history-fallback — no runtime env or API proxy.
+
+```bash
+docker build -t banking-client \
+  --build-arg VITE_API_URL="https://your-api-domain/api" ./client
+docker run -p 8080:80 banking-client   # → http://localhost:8080
+```
+
+Make sure the API's `CORS_ORIGIN` includes the client's origin, and expose port `80` on the client.
 
 ## API
 

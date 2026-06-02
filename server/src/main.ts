@@ -10,7 +10,10 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   app.use(helmet());
-  app.enableCors();
+  // Lock CORS to the configured browser origin(s) in production (comma-separated
+  // allowlist); reflect any origin when unset, which keeps local dev frictionless.
+  const corsOrigin = config.get<string>("CORS_ORIGIN");
+  app.enableCors({ origin: corsOrigin ? corsOrigin.split(",").map((o) => o.trim()) : true });
   app.setGlobalPrefix("api");
   app.enableShutdownHooks();
 

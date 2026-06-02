@@ -39,6 +39,12 @@ export class EnvironmentVariables {
   @Max(65535)
   REDIS_PORT = 6379;
 
+  // Comma-separated allowlist of browser origins for CORS (e.g.
+  // https://app.example.com). Unset = reflect any origin (local dev only).
+  @IsOptional()
+  @IsString()
+  CORS_ORIGIN?: string;
+
   // Required once auth lands (Phase 3); optional here so the app boots earlier in the build-out.
   @IsOptional()
   @IsString()
