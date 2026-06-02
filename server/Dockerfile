@@ -20,6 +20,12 @@ FROM node:20-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# curl is needed for container healthchecks: the slim image ships with neither
+# curl nor wget, so any platform probe (and the HEALTHCHECK below) would fail.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/drizzle ./drizzle
@@ -31,4 +37,8 @@ RUN chmod +x ./entrypoint.sh
 USER node
 
 EXPOSE 3001
+# Probe the readiness endpoint (verifies DB connectivity). start-period gives
+# migrate-on-start time before failures count against the container.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS "http://localhost:${PORT:-3001}/api/health" || exit 1
 ENTRYPOINT ["./entrypoint.sh"]
