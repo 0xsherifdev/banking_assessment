@@ -59,15 +59,18 @@ export const transactionsTable = pgTable(
     amount: bigint({ mode: "number" }).notNull(),
     description: text().notNull(),
     relatedAccountId: integer().references(() => accountsTable.id),
-    // Internal trace id (uuid). For external (Paystack) flows this is the gateway reference.
+    // Per-row trace id (uuid). For external (Paystack) flows this is the gateway
+    // reference — unique so a webhook can't be applied twice.
     reference: varchar({ length: 64 }).notNull().unique(),
+    // Links the two legs of a transfer (one DEBIT + one CREDIT). Null otherwise.
+    groupReference: varchar({ length: 64 }),
     status: transactionStatus().notNull().default("COMPLETED"),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("transactions_account_created_idx").on(table.accountId, table.createdAt),
-    index("transactions_reference_idx").on(table.reference),
+    index("transactions_group_reference_idx").on(table.groupReference),
   ]
 );
 

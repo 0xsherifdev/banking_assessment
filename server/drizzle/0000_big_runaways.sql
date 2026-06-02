@@ -22,6 +22,7 @@ CREATE TABLE "transactions" (
 	"description" text NOT NULL,
 	"related_account_id" integer,
 	"reference" varchar(64) NOT NULL,
+	"group_reference" varchar(64),
 	"status" "transaction_status" DEFAULT 'COMPLETED' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -41,4 +42,4 @@ ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_related_account_id_accounts_id_fk" FOREIGN KEY ("related_account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "transactions_account_created_idx" ON "transactions" USING btree ("account_id","created_at");--> statement-breakpoint
-CREATE INDEX "transactions_reference_idx" ON "transactions" USING btree ("reference");
+CREATE INDEX "transactions_group_reference_idx" ON "transactions" USING btree ("group_reference");

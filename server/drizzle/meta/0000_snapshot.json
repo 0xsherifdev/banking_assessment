@@ -1,5 +1,5 @@
 {
-  "id": "aae02b6c-9b43-44f5-8326-f43b78ebb509",
+  "id": "1deb82d7-d7f2-46cf-a2b8-5c5bf0864d2f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -159,6 +159,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "group_reference": {
+          "name": "group_reference",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "status": {
           "name": "status",
           "type": "transaction_status",
@@ -204,11 +210,11 @@
           "method": "btree",
           "with": {}
         },
-        "transactions_reference_idx": {
-          "name": "transactions_reference_idx",
+        "transactions_group_reference_idx": {
+          "name": "transactions_group_reference_idx",
           "columns": [
             {
-              "expression": "reference",
+              "expression": "group_reference",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
