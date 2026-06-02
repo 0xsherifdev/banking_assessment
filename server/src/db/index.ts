@@ -1,4 +1,6 @@
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { createDrizzle } from "./drizzle";
 
-export const db = drizzle({ connection: process.env.DATABASE_URL!, casing: "snake_case" });
+// Standalone connection for CLI scripts (seeder, migrations). The Nest app
+// gets its own DI-managed instance via DrizzleModule.
+export const { db, pool } = createDrizzle(process.env.DATABASE_URL!);
