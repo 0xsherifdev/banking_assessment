@@ -4,9 +4,16 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /data/postgres:/data/postgres
+      # Postgres stores its data in /var/lib/postgresql/data — mounting a named
+      # volume there is what actually persists the database across recreations.
+      - pgdata:/var/lib/postgresql/data
     env_file:
       - docker.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - postgres
 
@@ -22,6 +29,7 @@ services:
 
 volumes:
   redis_data:
+  pgdata:
 
 networks:
   postgres:
