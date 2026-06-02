@@ -1,5 +1,4 @@
 import { AccountList } from "./components/AccountList";
-import "./App.css";
 
 function App() {
   return (
@@ -7,7 +6,7 @@ function App() {
       <header className="header">
         <h1>Banking Dashboard</h1>
       </header>
-      <main className="main">
+      <main className="flex pt-100 container mx-auto">
         <AccountList />
       </main>
     </div>

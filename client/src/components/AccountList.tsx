@@ -26,7 +26,7 @@
 import { useState, useEffect } from "react";
 import { Account } from "../types";
 import { getAccounts } from "../api";
-import styles from "./AccountList.module.css";
+import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "./ui/table";
 
 export function AccountList() {
   // Basic state management - Consider using more robust state management for larger applications
@@ -61,18 +61,33 @@ export function AccountList() {
   // - More interactive features
   // - Accessibility improvements
   return (
-    <div className={styles.container}>
-      <h2>Accounts</h2>
-      <div className={styles.grid}>
-        {accounts.map((account) => (
-          <div key={account.id} className={styles.card}>
-            <h3>{account.accountHolder}</h3>
-            <p>Account Number: {account.accountNumber}</p>
-            <p>Type: {account.accountType}</p>
-            <p>Balance: ${account.balance.toFixed(2)}</p>
-          </div>
+    <Table>
+      <TableCaption>A list of your accounts.</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[100px]">Invoice</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Method</TableHead>
+          <TableHead className="text-right">Amount</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {accounts.map(({ id, accountHolder, accountNumber, accountType, balance }) => (
+          <TableRow key={id.toString()}>
+            <TableCell className="font-medium">{id}</TableCell>
+            <TableCell>{accountHolder}</TableCell>
+            <TableCell>{accountNumber}</TableCell>
+            <TableCell>{accountType}</TableCell>
+            <TableCell>{balance}</TableCell>
+          </TableRow>
         ))}
-      </div>
-    </div>
+      </TableBody>
+      <TableFooter>
+        <TableRow>
+          <TableCell colSpan={3}>Total</TableCell>
+          <TableCell className="text-right">$2,500.00</TableCell>
+        </TableRow>
+      </TableFooter>
+    </Table>
   );
 }
