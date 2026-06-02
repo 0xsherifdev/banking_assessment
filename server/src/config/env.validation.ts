@@ -22,6 +22,12 @@ export class EnvironmentVariables {
   @IsString()
   DATABASE_URL!: string;
 
+  // Full connection string for managed/hosted Redis (takes precedence over
+  // REDIS_HOST/REDIS_PORT), e.g. redis://default:password@host:6379/0.
+  @IsOptional()
+  @IsString()
+  REDIS_URL?: string;
+
   @IsOptional()
   @IsString()
   REDIS_HOST = "localhost";
