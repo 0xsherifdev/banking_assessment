@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { api, clearToken, getToken, setToken } from "../lib/api";
+import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from "../lib/api";
 import type { User } from "../types";
 
 interface AuthContextValue {
@@ -26,6 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(setUser)
       .catch(() => clearToken())
       .finally(() => setLoading(false));
+  }, []);
+
+  // api layer calls this on a 401 from an authenticated request → back to login.
+  useEffect(() => {
+    setUnauthorizedHandler(() => setUser(null));
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const login = async (email: string, password: string) => {

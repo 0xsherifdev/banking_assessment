@@ -31,7 +31,8 @@ export function TransactionForm({
 
     if (!amount || Number.isNaN(amt) || amt <= 0) {
       next.amount = "Enter an amount greater than 0";
-    } else if (Math.round(amt * 100) !== amt * 100) {
+    } else if (Math.abs(amt * 100 - Math.round(amt * 100)) > 1e-6) {
+      // Epsilon-tolerant (matches server money.ts): 19.99 * 100 isn't exactly 1999 in float.
       next.amount = "At most 2 decimal places";
     }
     if (!description.trim()) {

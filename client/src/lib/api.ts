@@ -21,6 +21,13 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+/** Fires on a 401 from an authenticated request (e.g. expired JWT); AuthContext
+ * registers it to drop back to the login screen. */
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  onUnauthorized = handler;
+}
+
 /** Error carrying the backend's status, message and (for validation) field details. */
 export class ApiError extends Error {
   constructor(
@@ -55,6 +62,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   const data = await res.json().catch(() => null);
   if (!res.ok) {
+    // 401 on a request that carried a token = stale session; clear it and bounce
+    // to login. Keying off `token` avoids tripping on a failed /auth/login.
+    if (res.status === 401 && token) {
+      clearToken();
+      onUnauthorized?.();
+    }
     const message = (data && (data.error as string)) || `Request failed (${res.status})`;
     throw new ApiError(res.status, message, data?.details);
   }
